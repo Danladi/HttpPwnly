@@ -1,0 +1,80 @@
+<html>
+    <head>
+        <!-- Latest compiled and minified CSS -->
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous">
+
+<!-- Optional theme -->
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap-theme.min.css" integrity="sha384-fLW2N01lMqjakBkx3l/M9EahuwpSfeNvV63J5ezn3uZzapT0u7EYsXMjQV+0En5r" crossorigin="anonymous">
+
+
+    </head>
+
+  <body>
+
+
+    <div class="container-fluid">
+      <div class="row">
+        <div class="col-sm-3 col-md-2 sidebar">
+            <h2>Active Browsers</h2>
+          <ul class="nav nav-sidebar nav-pills nav-stacked">
+            <li class="xss-browser active" browser-id="1"><a href="#">Host 1</a></li>
+            <li class="xss-browser" browser-id="2"><a href="#">Host 2</a></li>
+            <li class="xss-browser" browser-id="3"><a href="#">Host 3</a></li>
+            <li class="xss-browser" browser-id="4"><a href="#">Host 4</a></li>
+            <li class="xss-browser" browser-id="5"><a href="#">Host 5</a></li>
+            <li class="xss-browser" browser-id="6"><a href="#">Host 6</a></li>
+            
+
+          </ul>
+        </div>
+        <div class="col-md-8 main">
+            <h2>Tasks</h2><button type="button" class="btn btn-default" aria-label="Left Align">
+  <span class="glyphicon glyphicon-chevron-left" aria-hidden="true"></span>
+</button>
+<button type="button" class="btn btn-default" aria-label="Left Align">
+  <span class="glyphicon glyphicon-chevron-right" aria-hidden="true"></span>
+</button>
+<button type="button" class="btn btn-default" aria-label="Left Align">
+  <span class="glyphicon glyphicon-flash" aria-hidden="true"></span>
+</button>
+<div class="panel panel-default">
+  <div class="panel-heading">
+    <h3 class="panel-title">Request</h3>
+  </div>
+  <div class="panel-body">
+    <textarea class="form-control" rows="8"> </textarea>
+  </div>
+</div>
+<div class="panel panel-default">
+  <div class="panel-heading">
+    <h3 class="panel-title">Response</h3>
+  </div>
+  <div class="panel-body">
+   <textarea class="form-control" rows="8"> </textarea>
+  </div>
+</div>
+
+        </div>
+      </div>
+    </div>
+
+<script src="https://code.jquery.com/jquery-2.2.4.min.js" ></script>
+<!-- Latest compiled and minified JavaScript -->
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js" integrity="sha384-0mSbJDEHialfmuBBQP6A4Qrprq5OVfW37PRR3j5ELqxss1yVqOtnepnHVP9aJ7xS" crossorigin="anonymous"></script>
+
+ <script>
+
+  $(document).ready(function(){
+    $("li.xss-browser").click(function(){
+        $("li.xss-browser").removeClass("active");
+        $(this).addClass("active");
+        console.debug('browser selected: '+$(this).attr("browser-id"));
+        
+    });
+});   
+ </script>
+  </body>
+    
+    
+    
+</html>

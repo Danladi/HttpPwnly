@@ -8,7 +8,6 @@ from collections import OrderedDict
 DATABASE = 'tasks.db'
 app = Flask(__name__)
 cors = CORS(app)
-
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///tasks.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
@@ -73,7 +72,6 @@ def gettasks(client_id):
 @app.route('/api/tasks/<int:task_id>', methods=['POST'])
 def recievetasks(task_id):
     if not request.json:
-        print request
         abort(400)
 
     for task in request.json['tasks']:
@@ -86,14 +84,28 @@ def recievetasks(task_id):
         print 'recieved output for taskid: '+str(task_id)
 
     return jsonify({'result': True}), 201
-    
+
+@app.route('/api/tasks/add', methods=['POST'])
+def recievetasks():
+    if not request.json:
+        abort(400)
+    for client in request.json['clients']:
+        for task in client['tasks']:
+            #do database insert for each Task
+            print client['id']
+            print task['task']
+              
 @app.route('/api/adddummytask/<int:client_id>', methods=['GET'])
 def addtask(client_id):
     myclient = Client.query.filter_by(id=client_id).first()
     mytask = Task(myclient,"1+1;") 
     db.session.add(mytask)
     db.session.commit()
-    return jsonify({'result': True}), 201       
-if __name__ == '__main__':
-    app.run(debug=True)
+    return jsonify({'result': True}), 201
     
+@app.route('/dashboard', methods=['GET'])
+def serveDash():
+    return open("dashboard.html").read()
+    
+if __name__ == '__main__':
+    app.run(debug=True,port=8081)
