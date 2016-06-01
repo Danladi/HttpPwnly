@@ -31,10 +31,11 @@
             <h2>Tasks</h2><button type="button" class="btn btn-default" aria-label="Left Align">
   <span class="glyphicon glyphicon-chevron-left" aria-hidden="true"></span>
 </button>
+<strong>1</strong>
 <button type="button" class="btn btn-default" aria-label="Left Align">
   <span class="glyphicon glyphicon-chevron-right" aria-hidden="true"></span>
 </button>
-<button type="button" class="btn btn-default" aria-label="Left Align">
+<button id="xss-submit" type="button" class="btn btn-default" aria-label="Left Align">
   <span class="glyphicon glyphicon-flash" aria-hidden="true"></span>
 </button>
 <div class="panel panel-default">
@@ -42,7 +43,7 @@
     <h3 class="panel-title">Request</h3>
   </div>
   <div class="panel-body">
-    <textarea class="form-control" rows="8"> </textarea>
+    <textarea id="xss-request" class="form-control" rows="8"> </textarea>
   </div>
 </div>
 <div class="panel panel-default">
@@ -50,7 +51,7 @@
     <h3 class="panel-title">Response</h3>
   </div>
   <div class="panel-body">
-   <textarea class="form-control" rows="8"> </textarea>
+   <textarea id="xss-response" class="form-control" rows="8"> </textarea>
   </div>
 </div>
 
@@ -65,12 +66,17 @@
  <script>
 
   $(document).ready(function(){
-    $("li.xss-browser").click(function(){
+    $("li.xss-browser").click(function(){ //handle selecting browser to target
         $("li.xss-browser").removeClass("active");
         $(this).addClass("active");
         console.debug('browser selected: '+$(this).attr("browser-id"));
         
     });
+    $("#xss-submit").click(function(){ 
+        console.debug('submitting to browser: #'+$("li.xss-browser.active").attr("browser-id")+' request: '+$("#xss-request").val());
+        $("#xss-request").val("");
+    });
+    
 });   
  </script>
   </body>
