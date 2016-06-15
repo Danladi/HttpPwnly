@@ -11,7 +11,7 @@ https://www.youtube.com/watch?v=HQYzJKpBHjk
 ## Asynchronous payloads:
 To overide normal task output data within your payload (for example in order to retrieve output from XMLHttpRequest), call the "sendOutput" function and pass it your intended output. For example:
 
-```
+```javascript
 var xmlhttp = new XMLHttpRequest();
   xmlhttp.onreadystatechange = function() {
     if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
