@@ -1,0 +1,6 @@
+{
+  "name": "Httppwnly",
+  "tagline": "\"Repeater\" style XSS post-exploitation tool for mass browser control.",
+  "body": "# HttpPwnly\r\n\r\n\"Repeater\" style XSS post-exploitation tool for mass browser control. Primarily a PoC to show why HttpOnly flag isn't a complete protection against session hijacking via XSS.\r\n\r\n## Dependencies:\r\npip install flask flask_sqlalchemy flask_cors\r\n\r\n## Demo:\r\nhttps://www.youtube.com/watch?v=HQYzJKpBHjk\r\n",
+  "note": "Don't delete this file! It's used internally to help with page regeneration."
+}
