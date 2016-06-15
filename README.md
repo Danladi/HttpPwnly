@@ -18,6 +18,6 @@ var xmlhttp = new XMLHttpRequest();
       sendOutput(task.id,xmlhttp.responseText);
     }
   };
-  xmlhttp.open("GET", "/", true);
-  xmlhttp.send();
+xmlhttp.open("GET", "/", true);
+xmlhttp.send();
 ```
