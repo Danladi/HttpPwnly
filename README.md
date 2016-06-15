@@ -6,4 +6,4 @@ Dependencies:
 pip install flask flask_sqlalchemy flask_cors
 
 Demo:
-http://danladi.github.io/HttpPwnly
+https://www.youtube.com/watch?v=HQYzJKpBHjk
