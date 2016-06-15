@@ -24,14 +24,14 @@
 
       </div>
       <div class="col-md-8 main">
-        <h2>Tasks</h2><button id="xss-left" type="button" class="btn btn-default" aria-label="Left Align">
+        <h2>Tasks</h2><button id="xss-left" title="Previous Task" type="button" class="btn btn-default" aria-label="Left Align">
   <span class="glyphicon glyphicon-chevron-left" aria-hidden="true"></span>
 </button>
         <span id="taskswitcher-num">New</span>
-        <button id="xss-right" type="button" class="btn btn-default" aria-label="Left Align">
+        <button id="xss-right" title="Next Task"  type="button" class="btn btn-default" aria-label="Left Align">
   <span  class="glyphicon glyphicon-chevron-right" aria-hidden="true"></span>
 </button>
-        <button id="xss-submit" type="button" class="btn btn-default" aria-label="Left Align">
+        <button id="xss-submit" title="Execute Task" type="button" class="btn btn-default" aria-label="Left Align">
   <span class="glyphicon glyphicon-flash" aria-hidden="true"></span>
 </button>
         <div class="panel panel-default">
@@ -44,7 +44,9 @@
         </div>
         <div class="panel panel-default">
           <div class="panel-heading">
-            <h3 class="panel-title">Response</h3>
+            <h3 class="panel-title">Response - <button title="Render as HTML" id="xss-renderresponse" onclick="renderResponse()" type="button" class="btn btn-default" aria-label="Left Align">
+  <span class="glyphicon glyphicon-eye-open" aria-hidden="true"></span>
+</button></h3>
           </div>
           <div class="panel-body">
             <textarea id="xss-response" class="form-control" rows="8" readonly> </textarea>
@@ -104,6 +106,10 @@ function renderExistingTask(clientid,taskid){
   $('#xss-request').val(String(db.clients[curclient].tasks[curtask].input));
   console.debug(db.clients[curclient].tasks[curtask].input);
   $('#xss-response').val(db.clients[curclient].tasks[curtask].output);
+}
+function renderResponse(){
+  var myWindow = window.open("/", "MsgWindow");
+  myWindow.document.write($('#xss-response').val());
 }
 function getTaskOutput(clientid,taskid,callback){
       var xhttp = new XMLHttpRequest();
