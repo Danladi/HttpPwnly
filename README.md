@@ -3,7 +3,7 @@
 "Repeater" style XSS post-exploitation tool for mass browser control. Primarily a PoC to show why HttpOnly flag isn't a complete protection against session hijacking via XSS.
 
 ## Dependencies:
-pip install flask flask_sqlalchemy flask_cors flask-socketio eventlet
+pip install -r requirements.txt
 
 ## Demo:
 https://www.youtube.com/watch?v=HQYzJKpBHjk
