@@ -70,12 +70,12 @@
   mode: {name: "javascript", globalVars: true},
   matchBrackets: true
            });
+
            var xssResponse = CodeMirror.fromTextArea(document.getElementById("xss-response"),{
   lineNumbers: true,
   extraKeys: {"Ctrl-Space": "autocomplete"},
   mode: {name: "javascript", globalVars: true},
-  matchBrackets: true,
-  readOnly:true
+  matchBrackets: true
            });
         function findByID(arr, idval) { //helper function to return array id based on "id" value
             idval = idval;
