@@ -3,7 +3,7 @@
 "Repeater" style XSS post-exploitation tool for mass browser control. Primarily a PoC to show why HttpOnly flag isn't a complete protection against session hijacking via XSS.
 
 ## Dependencies:
-pip install -r requirements.txt 
+pip install -r requirements.txt
 
 ## Demo:
 https://www.youtube.com/watch?v=spfrmsbhBaw
