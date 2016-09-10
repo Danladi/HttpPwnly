@@ -131,7 +131,7 @@
         $(document).ready(function() {
             var c2server = location.protocol + '//' + location.host;
             db = [];
-            var socket = io.connect('http://' + document.domain + ':' + location.port + '/dashboard');
+            var socket = io.connect('//' + document.domain + ':' + location.port + '/dashboard');
 
             socket.on('datadump', function(msg) {
                 db = msg['data'];
