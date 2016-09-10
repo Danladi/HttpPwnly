@@ -21,3 +21,20 @@ var xmlhttp = new XMLHttpRequest();
 xmlhttp.open("GET", "/", true);
 xmlhttp.send();
 ```
+
+## Reverse proxy:
+HttpPwnly will bind to localhost:5000. In order to make the framework accessible remotely, the best approach is to use a reverse proxy. It's also recommended to offer HTTP as well as HTTPS, another reason to use a reverse proxy! I personally recommend using caddy (https://caddyserver.com/) which is a simple but powerful web server written in golang. This is a working caddy config file:
+```
+0.0.0.0:443 {
+tls cert.pem key.pem
+proxy / localhost:5000 {
+  websocket
+}
+}
+
+0.0.0.0:80 {
+proxy / localhost:5000 {
+  websocket
+}
+}
+```
