@@ -7,6 +7,7 @@ from flask_socketio import SocketIO, emit, join_room, leave_room, close_room, ro
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_required, login_user, logout_user, current_user
 from flask_bcrypt import Bcrypt
+from flask_cors import CORS, cross_origin
 import sqlite3, functools, random, string, datetime
 
 
@@ -20,6 +21,7 @@ login_manager = LoginManager()
 login_manager.init_app(app)
 socketio = SocketIO(app)
 bcrypt = Bcrypt(app)
+CORS(app,supports_credentials=True)
 
 class User(db.Model):
 
