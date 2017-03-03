@@ -6,7 +6,8 @@
 pip install -r requirements.txt
 
 ## Demo:
-https://www.youtube.com/watch?v=spfrmsbhBaw
+[![Demo Video](http://img.youtube.com/vi/spfrmsbhBaw/0.jpg)](https://www.youtube.com/watch?v=spfrmsbhBaw "HttpPwnly Update Demo")
+
 
 ## Asynchronous payloads:
 To overide normal task output data within your payload (for example in order to retrieve output from XMLHttpRequest), call the "sendOutput" function and pass it your intended output. For example:
