@@ -16,6 +16,7 @@
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.15.2/addon/hint/javascript-hint.js"></script>
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.15.2/addon/hint/show-hint.js"></script>
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.15.2/addon/edit/matchbrackets.js"></script>
+	<title>HttpPwnly</title>
 </head>
 
 <body>
@@ -24,7 +25,7 @@
     <div class="container-fluid">
         <div class="row">
             <div class="col-sm-3 col-md-3 sidebar">
-                <h2>Active Sessions</h2>
+                <h2>Active Sessions</h2> 
                 <div class="list-group" id="xss-active-browsers">
                 </div>
 
@@ -39,7 +40,9 @@
 </button>
                 <button id="xss-submit" title="Execute Task" type="button" class="btn btn-default" aria-label="Left Align">
   <span class="glyphicon glyphicon-flash" aria-hidden="true"></span>
-</button>
+</button><span style="float:right"><button id="logout" title="Log Out" type="button" class="btn btn-default" aria-label="Left Align">
+  <span class="glyphicon glyphicon-log-out" aria-hidden="true"></span>
+</button></span>
                 <div class="panel panel-default">
                     <div class="panel-heading">
                         <h3 class="panel-title">Request</h3>
@@ -247,6 +250,10 @@
                     renderExistingTask(client, cwt - 1);
                 }
 
+
+            });
+			            $(document).on('click', '#logout', function() {
+                window.location="/logout";
 
             });
         });
