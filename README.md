@@ -32,7 +32,6 @@ server {
 
     location / {
         proxy_pass http://127.0.0.1:5000;
-        include proxy_params;
         proxy_http_version 1.1;
         proxy_buffering off;
         proxy_set_header Upgrade $http_upgrade;
@@ -47,7 +46,6 @@ server {
     ssl_certificate_key /etc/letsencrypt/live/example.com/privkey.pem;
     location / {
         proxy_pass http://127.0.0.1:5000;
-        include proxy_params;
         proxy_http_version 1.1;
         proxy_buffering off;
         proxy_set_header Upgrade $http_upgrade;
